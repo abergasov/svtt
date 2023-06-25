@@ -16,7 +16,7 @@ func (s *Service) processBackground() {
 	}
 }
 
-// checkQueue get first avaliable duty from queue and start processing
+// checkQueue get first available duty from queue and start processing
 func (s *Service) checkQueue() {
 	s.executionQueueMU.Lock()
 	defer s.executionQueueMU.Unlock()

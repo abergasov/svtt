@@ -20,10 +20,10 @@ type Service struct {
 	processor        SingleDutyProcessor
 }
 
-func NewService(ctx context.Context, logger logger.AppLogger, responseChan chan entities.DutyResponce, processor SingleDutyProcessor) Dutyer {
+func NewService(ctx context.Context, log logger.AppLogger, responseChan chan entities.DutyResponce, processor SingleDutyProcessor) Dutyer {
 	srv := &Service{
 		ctx:            ctx,
-		log:            logger,
+		log:            log,
 		responseChan:   responseChan,
 		executionQueue: make(map[entities.DutyType]*list.List),
 		ticker:         time.NewTicker(100 * time.Millisecond),
