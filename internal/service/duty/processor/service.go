@@ -41,6 +41,17 @@ func (s *Service) Process(request entities.DutyRequest) {
 		queue = list.New()
 		s.executionQueue[request.Duty] = queue
 	}
+	// use height to insert request in queue
+	for e := queue.Front(); e != nil; e = e.Next() {
+		container := e.Value.(*processingContainer)
+		if container.request.Height > request.Height {
+			queue.InsertBefore(&processingContainer{
+				status:  processingStatusReady,
+				request: request,
+			}, e)
+			return
+		}
+	}
 	queue.PushBack(&processingContainer{
 		status:  processingStatusReady,
 		request: request,

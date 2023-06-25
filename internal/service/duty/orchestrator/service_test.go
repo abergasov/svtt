@@ -16,7 +16,7 @@ import (
 
 const (
 	sleepSeconds = 2
-	heightsCount = 4 // how much heights will be processed per validator and per duty type
+	heightsCount = 4 // how many heights will be processed per validator and per duty type
 )
 
 func TestService_HandleDutyRequest(t *testing.T) {
@@ -26,8 +26,9 @@ func TestService_HandleDutyRequest(t *testing.T) {
 
 	// generate validator duty requests
 	knowledge := make(map[int]map[entities.DutyType]map[int]entities.DutyResponce)
+	executionOrder := make(map[int]map[entities.DutyType]int)      // track execution order
 	currentRunning := make(map[int]map[entities.DutyType]struct{}) // track currentrly running duties
-	currentRunningMU := sync.Mutex{}
+	stateMU := sync.Mutex{}
 	dutyes := []entities.DutyType{
 		entities.DutyTypeProposer,
 		entities.DutyTypeAggregator,
@@ -40,7 +41,7 @@ func TestService_HandleDutyRequest(t *testing.T) {
 		currentRunning[i] = make(map[entities.DutyType]struct{})
 		for j := 0; j < len(dutyes); j++ { // duty type
 			knowledge[i][dutyes[j]] = make(map[int]entities.DutyResponce)
-			for k := 0; k < heightsCount; k++ { // height
+			for k := 1; k <= heightsCount; k++ { // height
 				knowledge[i][dutyes[j]][k] = entities.DutyResponce{
 					Duty:      dutyes[j],
 					Height:    k,
@@ -56,19 +57,23 @@ func TestService_HandleDutyRequest(t *testing.T) {
 	// when
 	service := orchestrator.NewService(appLog, processor.NewService, orchestrator.WithCustomRequestProcessor(func(request entities.DutyRequest) entities.DutyResponce {
 		// check that only one processor per dutyTipe executes at the same time
-		currentRunningMU.Lock()
+		stateMU.Lock()
 		if _, ok := currentRunning[request.Validator][request.Duty]; ok {
 			t.Fatal("duty already running")
 		}
 		currentRunning[request.Validator][request.Duty] = struct{}{}
+		previousHeigt := executionOrder[request.Validator][request.Duty]
+		if previousHeigt >= request.Height {
+			t.Fatal("wrong execution order")
+		}
+		stateMU.Unlock()
 
 		defer func() {
-			currentRunningMU.Lock()
+			stateMU.Lock()
 			delete(currentRunning[request.Validator], request.Duty)
-			currentRunningMU.Unlock()
+			stateMU.Unlock()
 		}()
 
-		currentRunningMU.Unlock()
 		time.Sleep(sleepSeconds * time.Second)
 		return entities.DutyResponce{
 			Duty:      request.Duty,
