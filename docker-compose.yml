@@ -17,8 +17,6 @@ services:
       GIT_HASH: $GIT_HASH
     ports:
       - 8000:8000
-    depends_on:
-      - dbPostgres
     networks:
       - app-network
     command: [ "/app/binary", "--config", "configs/app_conf_docker.yml" ]
