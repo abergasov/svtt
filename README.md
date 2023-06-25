@@ -1,11 +1,5 @@
 ## Overview
-init after clone
-Set project name in Makefile and run
+check tests
 ```shell
-make init_repo
-```
-
-local run in docker
-```shell
-make run
+make test
 ```

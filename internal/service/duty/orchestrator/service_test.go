@@ -115,5 +115,5 @@ func TestService_HandleDutyRequest(t *testing.T) {
 	waitTime := time.Duration((heightsCount * sleepSeconds * len(dutyes)) + 1) // 1 - just in case for goroutines switching
 	require.Eventuallyf(t, func() bool {
 		return atomic.LoadInt32(&counter) == 0
-	}, waitTime*time.Second, 100*time.Millisecond, "not all duty requests were processed: %d", counter)
+	}, waitTime*time.Second, 100*time.Millisecond, "not all duty requests were processed: %d", atomic.LoadInt32(&counter))
 }
