@@ -9,7 +9,8 @@ import (
 	"svtt/internal/config"
 	"svtt/internal/logger"
 	"svtt/internal/routes"
-	"svtt/internal/service/duty_processor"
+	"svtt/internal/service/duty/orchestrator"
+	"svtt/internal/service/duty/processor"
 	"syscall"
 
 	"go.uber.org/zap"
@@ -33,7 +34,7 @@ func main() {
 	}
 
 	appLog.Info("init services")
-	service := duty_processor.NewService(appLog)
+	service := orchestrator.NewService(appLog, processor.NewService)
 
 	appLog.Info("init http service")
 	appHTTPServer := routes.InitAppRouter(appLog, service, fmt.Sprintf(":%d", appConf.AppPort))
@@ -52,4 +53,7 @@ func main() {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	<-c // This blocks the main thread until an interrupt is received
+	if err = service.Stop(); err != nil {
+		appLog.Error("unable to stop service", err)
+	}
 }
