@@ -1,8 +1,8 @@
 package routes
 
 import (
-	"go_project_template/internal/logger"
-	"go_project_template/internal/service/sampler"
+	"svtt/internal/logger"
+	"svtt/internal/service/duty_processor"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/recover"
@@ -12,12 +12,12 @@ import (
 type Server struct {
 	appAddr    string
 	log        logger.AppLogger
-	service    *sampler.Service
+	service    *duty_processor.Service
 	httpEngine *fiber.App
 }
 
 // InitAppRouter initializes the HTTP Server.
-func InitAppRouter(log logger.AppLogger, service *sampler.Service, address string) *Server {
+func InitAppRouter(log logger.AppLogger, service *duty_processor.Service, address string) *Server {
 	app := &Server{
 		appAddr:    address,
 		httpEngine: fiber.New(fiber.Config{}),

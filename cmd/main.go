@@ -3,17 +3,14 @@ package main
 import (
 	"flag"
 	"fmt"
-	"go_project_template/internal/config"
-	"go_project_template/internal/logger"
-	samplerRepo "go_project_template/internal/repository/sampler"
-	"go_project_template/internal/routes"
-	samplerService "go_project_template/internal/service/sampler"
-	"go_project_template/internal/storage/database"
 	"log"
 	"os"
 	"os/signal"
+	"svtt/internal/config"
+	"svtt/internal/logger"
+	"svtt/internal/routes"
+	"svtt/internal/service/duty_processor"
 	"syscall"
-	"time"
 
 	"go.uber.org/zap"
 )
@@ -35,22 +32,8 @@ func main() {
 		appLog.Fatal("unable to init config", err, zap.String("config", *confFile))
 	}
 
-	appLog.Info("create storage connections")
-	dbConn, err := getDBConnect(appLog, &appConf.ConfigDB, appConf.MigratesFolder)
-	if err != nil {
-		appLog.Fatal("unable to connect to db", err, zap.String("host", appConf.ConfigDB.Address))
-	}
-	defer func() {
-		if err = dbConn.Close(); err != nil {
-			appLog.Fatal("unable to close db connection", err)
-		}
-	}()
-
-	appLog.Info("init repositories")
-	repo := samplerRepo.InitRepo(dbConn)
-
 	appLog.Info("init services")
-	service := samplerService.InitService(appLog, repo)
+	service := duty_processor.NewService(appLog)
 
 	appLog.Info("init http service")
 	appHTTPServer := routes.InitAppRouter(appLog, service, fmt.Sprintf(":%d", appConf.AppPort))
@@ -69,16 +52,4 @@ func main() {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	<-c // This blocks the main thread until an interrupt is received
-}
-
-func getDBConnect(log logger.AppLogger, cnf *config.DBConf, migratesFolder string) (*database.DBConnect, error) {
-	for i := 0; i < 5; i++ {
-		dbConnect, err := database.InitDBConnect(cnf, migratesFolder)
-		if err == nil {
-			return dbConnect, nil
-		}
-		log.Error("can't connect to db", err, zap.Int("attempt", i))
-		time.Sleep(time.Duration(i) * time.Second * 5)
-	}
-	return nil, fmt.Errorf("can't connect to db")
 }
